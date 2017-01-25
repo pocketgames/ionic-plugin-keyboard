@@ -16,6 +16,12 @@ import android.view.View;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.inputmethod.InputMethodManager;
 
+import android.content.res.Resources;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
+import android.view.ViewConfiguration;
+
+
 // import additionally required classes for calculating screen height
 import android.view.Display;
 import android.graphics.Point;
@@ -27,6 +33,25 @@ public class IonicKeyboard extends CordovaPlugin {
 
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
         super.initialize(cordova, webView);
+    }
+	
+	private int getNavbarSizeInPx() {
+        Context applicationContext = this.cordova.getActivity().getApplicationContext();
+        boolean hasMenuKey = ViewConfiguration.get(applicationContext).hasPermanentMenuKey();
+        boolean hasBackKey = KeyCharacterMap.deviceHasKey(KeyEvent.KEYCODE_BACK);
+
+        if(!hasMenuKey && !hasBackKey) {
+            // The device has a navigation bar
+            Resources resources = applicationContext.getResources();
+            int resourceId = resources.getIdentifier("navigation_bar_height", "dimen", "android");
+            if (resourceId > 0) {
+                return resources.getDimensionPixelSize(resourceId);
+            }
+            return 0;
+        }
+        else {
+            return 0;
+        }
     }
 
     public boolean execute(String action, JSONArray args, final CallbackContext callbackContext) throws JSONException {
@@ -98,6 +123,7 @@ public class IonicKeyboard extends CordovaPlugin {
 
                             int pixelHeightDiff = (int)(heightDiff / density);
                             if (pixelHeightDiff > 100 && pixelHeightDiff != previousHeightDiff) { // if more than 100 pixels, its probably a keyboard...
+								pixelHeightDiff += getNavbarSizeInPx() / density;
                                 String msg = "S" + Integer.toString(pixelHeightDiff);
                                 result = new PluginResult(PluginResult.Status.OK, msg);
                                 result.setKeepCallback(true);
